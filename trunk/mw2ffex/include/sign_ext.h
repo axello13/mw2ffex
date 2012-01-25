@@ -9,6 +9,12 @@ consider that I need only a quick check based on the first bytes because
 this function is used only rarely and needs to be fast and simple
 */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <ctype.h>
+
 typedef struct {
     signed char     signlen;    // max 127
     unsigned char   *sign;
@@ -871,7 +877,7 @@ static sign_ext_db_t sign_ext_db[] = {  // do NOT use const, I use a little tric
     { 13, "\x00\x01\x0F\x00\x46\x52\x45\x45\x4C\x41\x4E\x43\x45", "prz" },
     { 12, "\xFF\xFE\x3C\x00\x3F\x00\x78\x00\x6D\x00\x6C\x00", "ipj" },
     { 12, "\xF7\x02\x01\x83\x92\xC0\x1C\x3B\x00\x00\x00\x00", "dvi" },
-    { 12, "\xEF\xBB\xBF\x23\x45\x58\x54\x4D\x33\x55\x0D\x0A", "m3u8" },
+    { 12, "\xEF\xBB\xBF\x23\x45\x58\x54\x4D\x33\x55\x0D\x0A", "m3uint8_t" },
     { 12, "\xC8\xC4\xD9\x40\xC1\xD9\xC5\xC1\x00\x00\x04\xD0", "goe" },
     { 12, "\xC1\x83\x2A\x9E\x45\x00\x00\x00\x01\x00\x00\x00", "run" },
     { 12, "\x8A\x01\x09\x00\x00\x00\xE1\x08\x00\x00\x99\x19", "aw" },

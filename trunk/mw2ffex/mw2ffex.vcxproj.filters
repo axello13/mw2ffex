@@ -18,10 +18,10 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\mw2ffex.cpp">
+    <ClCompile Include="src\mw2ffex.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\offzip.c">
+    <ClCompile Include="src\extract.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

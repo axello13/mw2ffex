@@ -39,9 +39,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\Alex\Desktop\Mw2 FastFile Extractor\mw2ffex\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Alex\Desktop\Mw2 FastFile Extractor\mw2ffex\lib;$(LibraryPath)</LibraryPath>
-    <SourcePath>C:\Users\Alex\Desktop\Mw2 FastFile Extractor\mw2ffex\src;$(SourcePath)</SourcePath>
+    <IncludePath>$(ProjectDir)\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)\lib;$(LibraryPath)</LibraryPath>
+    <SourcePath>$(ProjectDir)\src;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -80,8 +80,8 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\mw2ffex.cpp" />
-    <ClCompile Include="src\offzip.c" />
+    <ClCompile Include="src\mw2ffex.c" />
+    <ClCompile Include="src\extract.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\sign_ext.h" />

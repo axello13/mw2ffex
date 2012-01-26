@@ -6,9 +6,12 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <string.h>
 
 #define PADDING '/xFF' // padding/seperator used by IW in the ff
 
+int freadstr(FILE* fid, register char* str, size_t max_size);
+char * getAssetType(int type);
 typedef struct {
 	int sizeOfFF;
 	char data[36];
@@ -28,22 +31,59 @@ typedef struct {
 } ff_string_index;
 
 typedef struct {
-	int pading;
 	int type;
+	int pading;
 } ff_asset_index;
 
 int main(int argc, char* argv[])
 {
 	ff_header header;
 	ff_index index;
-	ff_asset_index assetind;
+	ff_asset_index * assets;
 	ff_string_index * strings;
 	FILE *fp;
 	uint8_t temp = 255;
+	uint32_t version = 0;
 	int i=0,j = 0;
+	long fileLen = 0;
+	char * buffer;
+
+	fp = fopen("common.ff","rb");
+	fseek(fp,8,0);
+	fread(&version,sizeof(uint32_t),1,fp);
+	if(version != 276)
+	{
+		fclose(fp);
+		printf("This is not a MW2 Fastfile!\n");
+		return -1;
+	} else { printf("This is a MW2 Fastfile\n"); }
+	fclose(fp);
+	fp=NULL;
 
 	extract_fastfile("common.ff", "common.ff-extracted.dat");
+
 	fp = fopen("common.ff-extracted.dat","rb");
+	// Get the length
+    fseek(fp, 0, SEEK_END);
+    fileLen=ftell(fp);
+
+    fseek(fp, 0, SEEK_SET);
+
+	// Allocate memory
+    buffer = (char*)malloc(fileLen);
+
+    if (!buffer)
+    {
+        fprintf(stderr, "Memory error!\n");
+        fclose(fp);
+        return -1;
+    }
+
+	// File to buffer
+	fread(buffer, fileLen, 1, fp);
+	fclose(fp);
+	
+	printf("opened common-extracted.dat");
 	fread(&header,sizeof(header),1,fp);
 	printf("Read header of FF. Size is 0x%x\n", header.sizeOfFF);
 	fread(&index,sizeof(index),1,fp);
@@ -57,18 +97,27 @@ int main(int argc, char* argv[])
 	
 	strings = (ff_string_index*) malloc(sizeof(ff_string_index)*index.index1+1);
 	printf("Allocated memory for strings\n");
-	for(i=0; i<index.index1; i++)
+	for(i=0; i<index.index1-1; i++)
 	{
 		freadstr(fp,strings[i].string,40);
 		printf("%s\n",strings[i].string);
 	}
 	printf("Read pre asset string table\n");
 
-	for(i=0; i<index.index2; i++)
+	assets = (ff_asset_index*) malloc(sizeof(ff_asset_index)*index.index2+1);
+	for(i=0; i<index.index2-1; i++)
 	{
-		fread(
+		fread(&assets[i],sizeof(ff_asset_index),1,fp);
+		//printf("read index of type %s \n", getAssetType(assets[i].type));
+		printf("read index of type 0x%x \n", assets[i].type);
 	}
+	/*for(i=0; i<30; i++)
+	{
+		fread(&temp,sizeof(uint8_t),1,fp);
+		printf("0x%x\n",temp);
+	}*/
 	system("pause");
+	free(buffer);
 	return 0;
 }
 
@@ -86,5 +135,72 @@ int freadstr(FILE* fid, register char* str, size_t max_size)
         }
     } while ((*str++ != '\0') && (count < max_size));
     return count;
+}
+
+char * findSubstring(char known_string[], char *buffer, long fileLen)
+{
+	printf("Buffer starts: %p\n", &buffer[0]);
+	printf("Buffer ends: %p\n", &buffer[fileLen]);
+
+	// Determines offset of known_string
+
+	char *p = memmem(buffer, fileLen, bytes, 4);
+
+	printf(" General offset: %x\n", p);
+	return p;
+
+}
+char * getAssetType(int type)
+{
+	char ret[47][32] = {
+		"xmodelpieces", 
+		"physpreset", 
+		"xanim",
+		"xmodel",
+		"material",
+		"pixelshader",
+		"techset",
+		"image",
+		"sndcurve",
+		"loaded_sound",
+		"col_map_sp",
+		"col_map_mp",
+		"com_map",
+		"game_map_sp",
+		"game_map_mp",
+		"map_ents",
+		"gfx_map",
+		"lightdef",
+		"ui_map",
+		"font",
+		"menufile",
+		"menu",
+		"localize",
+		"weapon",
+		"snddriverglobals",
+		"impactfx",
+		"aitype",
+		"mptype",
+		"character",
+		"xmodelalias",
+		"rawfile",
+		"stringtable",
+		"unknown(0x21)",
+		"unknown(0x22)",
+		"unknown(0x23)",
+		"unknown(0x24)",
+		"stringtable",
+		"unknown(0x26)",
+		"unknown(0x27)",
+		"unknown(0x28))",
+		"unknown(0x29)",
+		"unknown(0x2a)",
+		"unknown(0x2b)",
+		"unknown(0x2c)",
+		"unknown(0x2d)",
+		"unknown(0x2e)",
+		"unknown(0x2f)"
+	};
+	return ret[type];
 }
 

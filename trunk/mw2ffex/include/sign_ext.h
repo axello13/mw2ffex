@@ -9,6 +9,9 @@ consider that I need only a quick check based on the first bytes because
 this function is used only rarely and needs to be fast and simple
 */
 
+#ifndef SIGN_EXT_H
+#define SIGN_EXT_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -2871,3 +2874,4 @@ unsigned char *sign_ext(unsigned char *data, int datalen) {
     return("dat");
 }
 
+#endif

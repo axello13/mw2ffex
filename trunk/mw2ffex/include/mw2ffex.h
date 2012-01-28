@@ -1,6 +1,13 @@
 #ifndef MW2FFEX_H
 #define MW2FFEX_H
 
-extern int unzip_fastfile(int argc, char *argv[]);
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <ctype.h>
+#include <direct.h>
+
+int extract_fastfile(char * infilename, char * outfilename);
 
 #endif

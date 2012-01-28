@@ -1,9 +1,9 @@
 // mw2ffex.cpp : Defines the entry point for the console application.
 //
 #include <mw2ffex.h>
+#include <bufferutil.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <ctype.h>
 #include <stdint.h>
 #include <string.h>
@@ -47,8 +47,12 @@ int main(int argc, char* argv[])
 	int i=0,j = 0;
 	long fileLen = 0;
 	char * buffer;
+	char * fileName = "common.ff";
+	char * fileNameExtracted = (char*)malloc(strlen(fileName)+14);
+	strcpy(fileNameExtracted,fileName);
+	strcat(fileNameExtracted,"-extracted.dat");
 
-	fp = fopen("common.ff","rb");
+	fp = fopen(fileName,"rb");
 	fseek(fp,8,0);
 	fread(&version,sizeof(uint32_t),1,fp);
 	if(version != 276)
@@ -60,9 +64,9 @@ int main(int argc, char* argv[])
 	fclose(fp);
 	fp=NULL;
 
-	extract_fastfile("common.ff", "common.ff-extracted.dat");
+	extract_fastfile(fileName, fileNameExtracted);
 
-	fp = fopen("common.ff-extracted.dat","rb");
+	fp = fopen(fileNameExtracted,"rb");
 	// Get the length
     fseek(fp, 0, SEEK_END);
     fileLen=ftell(fp);
@@ -81,15 +85,15 @@ int main(int argc, char* argv[])
 
 	// File to buffer
 	fread(buffer, fileLen, 1, fp);
+	printf("read %d bytes from %s into memory\n",fileLen,fileNameExtracted);
 	fclose(fp);
-	
-	printf("opened common-extracted.dat");
-	fread(&header,sizeof(header),1,fp);
+
+	readBuffer(&header,sizeof(header),1,buffer);
 	printf("Read header of FF. Size is 0x%x\n", header.sizeOfFF);
-	fread(&index,sizeof(index),1,fp);
+	readBuffer(&index,sizeof(index),1,buffer);
 	printf("Read index. %d entries in 1st index.\n%d entries in second index.\n%d entires in thrid index.\n", index.index1, index.index2, index.index3);
 	while (temp == 255) {
-		fread(&temp, sizeof(char), 1,fp);
+		readBuffer(&temp, sizeof(char), 1,buffer);
 		printf(".");
 		i++;
 	}
@@ -99,15 +103,15 @@ int main(int argc, char* argv[])
 	printf("Allocated memory for strings\n");
 	for(i=0; i<index.index1-1; i++)
 	{
-		freadstr(fp,strings[i].string,40);
+		bufferreadstr(fp,strings[i].string,40);
 		printf("%s\n",strings[i].string);
 	}
 	printf("Read pre asset string table\n");
 
 	assets = (ff_asset_index*) malloc(sizeof(ff_asset_index)*index.index2+1);
-	for(i=0; i<index.index2-1; i++)
+	/*for(i=0; i<index.index2-1; i++)
 	{
-		fread(&assets[i],sizeof(ff_asset_index),1,fp);
+		readBuffer(&assets[i],sizeof(ff_asset_index),1,fp);
 		//printf("read index of type %s \n", getAssetType(assets[i].type));
 		printf("read index of type 0x%x \n", assets[i].type);
 	}
@@ -121,35 +125,6 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-int freadstr(FILE* fid, register char* str, size_t max_size)
-{
-    int c, count = 0;
-    do {
-        c = fgetc(fid);
-        if (c == EOF) {
-            clearerr(fid);
-            return -1;
-        } else {
-            *str = (char) c;
-            count++;
-        }
-    } while ((*str++ != '\0') && (count < max_size));
-    return count;
-}
-
-char * findSubstring(char known_string[], char *buffer, long fileLen)
-{
-	printf("Buffer starts: %p\n", &buffer[0]);
-	printf("Buffer ends: %p\n", &buffer[fileLen]);
-
-	// Determines offset of known_string
-
-	char *p = memmem(buffer, fileLen, bytes, 4);
-
-	printf(" General offset: %x\n", p);
-	return p;
-
-}
 char * getAssetType(int type)
 {
 	char ret[47][32] = {

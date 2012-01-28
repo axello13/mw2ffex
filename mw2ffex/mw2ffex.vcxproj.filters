@@ -38,6 +38,9 @@
     <ClInclude Include="mw2ffex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\bufferutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\zdll.lib">

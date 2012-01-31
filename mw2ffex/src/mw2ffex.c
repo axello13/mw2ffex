@@ -6,11 +6,14 @@
 #include <ctype.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 #define PADDING '/xFF' // padding/seperator used by IW in the ff
 
 int freadstr(FILE* fid, register char* str, size_t max_size);
 char * getAssetType(int type);
+FILE* fopen_mkdir(const char* name, const char* mode);
 typedef struct {
 	int sizeOfFF;
 	char data[36];
@@ -78,16 +81,16 @@ int main(int argc, char* argv[])
 	extract_fastfile(fileName, fileNameExtracted);
 
 	fp = fopen(fileNameExtracted,"rb");
-
+	if(fp == NULL) { printf("FAILED TO OPEN FILE\n"); system("PAUSE"); return -1; }
 	fpout = fopen(fileNameLog, "w");
-
+	if(fpout == NULL) { printf("FAILED TO OPEN FILE\n"); system("PAUSE"); return -1; }
 	fread(&header,sizeof(header),1,fp);
 	printf("Read header of FF. Size is 0x%x\n", header.sizeOfFF);
 	fread(&index,sizeof(index),1,fp);
 	printf("Read index. %d entries in 1st index.\n%d entries in second index.\n%d entires in thrid index.\n", index.index1, index.index2, index.index3);
 	while (temp == 255) {
 		fread(&temp, sizeof(char), 1,fp);
-		printf(".");
+		//printf(".");
 		i++;
 	}
 	printf("Read %d bytes of padding.\n", i);
@@ -100,25 +103,26 @@ int main(int argc, char* argv[])
 	strings = (ff_string_index*) malloc(sizeof(ff_string_index)*index.index1+1);
 	printf("Allocated memory for strings index\n");
 	fseek(fp,-1,SEEK_CUR);
-	fprintf(fpout,"Pre asset string table");
+	fprintf(fpout,"---------------PRE ASSET STRINGS---------------\n");
 	for(i=0; i<index.index1-1; i++)
 	{
 		freadstr(fp,strings[i].string,40);
 		fprintf(fpout,"%s\n",strings[i].string);
-		//printf("%s\n",strings[i].string);
 	}
-	printf("Read pre asset string table\nNow at pos 0x%x\n",ftell(fp));
+	printf("Read pre asset string table.... Now at pos 0x%x\n",ftell(fp));
 
 	printf("Allocating memory for asset index\n");
+	fprintf(fpout,"---------------INDEX---------------\n");
 	assets = (ff_asset_index*) malloc(sizeof(ff_asset_index)*index.index2+1);
 	for(i=0; i<index.index2; i++)
 	{
 		fread(&assets[i],sizeof(ff_asset_index),1,fp);
+		fprintf(fpout,"read %s (0x%x)\n",getAssetType(assets[i].type),assets[i].type);
 	}
 	printf("read index\n");
 	printf("Allocating memory for assets\n");
+	fprintf(fpout,"---------------ASSETS---------------\n");
 	realassets = (ff_asset*)malloc(sizeof(ff_asset)*index.index2-1);
-
 	fseek(fp,4,SEEK_CUR);
 	loadAsset(fp,fpout,assets[0].type,realassets,0,outFolder);
 	for(i=1; i<index.index2; i++)
@@ -179,23 +183,26 @@ int loadAsset(FILE * fp, FILE * fpout, int type, ff_asset * assets, int i, char 
 		freadstr(fp,assets[i].name,40);
 		printf("stringtable (0x%x) called %s with size %dx%d at 0x%x\n",type,assets[i].name,assets[i].data1,assets[i].data2,startloc);
 		fprintf(fpout,"stringtable (0x%x) called %s with size %dx%d at 0x%x\n",type,assets[i].name,assets[i].data1,assets[i].data2,startloc);
-		assetFileName = "fastfiles/common/sp/specopstable.csv";//(char*)malloc(strlen(assetFolder)+strlen(assets[i].name)+5);
-		//strcat(assetFileName,assetFolder);
-		//strcat(assetFileName,assets[i].name);
-		//printf("Saving csv as %s",assetFileName);
-		assetFile = fopen("fastfiles/common/sp/specopstable.csv","w");
+		assetFileName = (char*)malloc(strlen(assetFolder)+strlen(assets[i].name)+5);
+		memset(assetFileName,0,strlen(assetFolder)+strlen(assets[i].name)+5);
+		strcat(assetFileName,assetFolder);
+		strcat(assetFileName,assets[i].name);
+		printf("Saving csv as %s\n",assetFileName);
+		assetFile = fopen_mkdir(assetFileName,"w");
 		if(assetFile == NULL) 
 		{
 			system("pause");
 		}
 		tempchar = (char*)malloc(128);
 		fseek(fp,(assets[i].data1*assets[i].data2)*8,SEEK_CUR);
-		for(j=0; j<assets[i].data1*assets[i].data2;j++)
+		for(j=0; j<(assets[i].data1*assets[i].data2)/2;j++)
 		{
 			freadstr(fp,tempchar,128);
-			fprintf(assetFile,"%c,",tempchar);
-			if((j % assets[i].data1) == 0)
-			{
+			fprintf(assetFile,"%s",tempchar);
+			if(j != ((assets[i].data1*assets[i].data2)/2)-1) {
+				fprintf(assetFile,",");
+			}
+			if((j % assets[i].data1) == 0 && j != 0) {
 				fprintf(assetFile,"\n");
 			}
 		}
@@ -237,6 +244,11 @@ int loadAsset(FILE * fp, FILE * fpout, int type, ff_asset * assets, int i, char 
 	case 0x1f:
 		printf("rawfile (0x%x) called %s at 0x%x\n",type, assets[i].name,startloc);
 		fprintf(fpout, "rawfile (0x%x) called %s at 0x%x\n",type, assets[i].name,startloc);
+		assetFileName = (char*)malloc(strlen(assetFolder)+strlen(assets[i].name)+5);
+		memset(assetFileName,0,strlen(assetFolder)+strlen(assets[i].name)+5);
+		strcat(assetFileName,assetFolder);
+		strcat(assetFileName,assets[i].name);
+		extract_rawfile(fp,assetFileName);
 		break;
 	default:
 		printf("unimplemented asset - %s (0x%x) at 0x%x\n",getAssetType(type),type,startloc);
@@ -299,4 +311,3 @@ char * getAssetType(int type)
 	};
 	return ret[type];
 }
-

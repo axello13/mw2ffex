@@ -26,9 +26,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\sign_ext.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\zconf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
